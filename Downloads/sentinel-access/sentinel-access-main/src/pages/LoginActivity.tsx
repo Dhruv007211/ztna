@@ -4,12 +4,42 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Activity, Clock } from "lucide-react";
 
+// OS detection function
+function getOS(): string {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  if (/android/i.test(ua)) return "Android";
+  if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
+  if (/Win/.test(ua)) return "Windows";
+  if (/Mac/.test(ua)) return "MacOS";
+  if (/Linux/.test(ua)) return "Linux";
+  return "Unknown";
+}
+
 export default function LoginActivity() {
   const { user } = useAuth();
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
+
+    const os = getOS(); // Detect OS
+    const deviceName = navigator.platform || "Unknown";
+    const browserName = navigator.userAgent || "Unknown";
+    const loginTime = new Date().toISOString();
+
+    // Insert login activity into Supabase
+    supabase.from("login_logs").insert({
+      user_id: user.id,
+      ip_address: "0.0.0.0", // optionally backend can provide real IP
+      device: deviceName,
+      browser: browserName,
+      operating_system: os,
+      login_status: "success",
+      login_time: loginTime,
+      risk_score: 0,
+    });
+
+    // Fetch all login logs for this user
     supabase
       .from("login_logs")
       .select("*")
